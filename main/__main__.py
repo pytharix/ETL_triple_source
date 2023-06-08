@@ -1,13 +1,21 @@
 from source.extract import Extract
+from source.loader import Loader
 
 
 def main():
-    print('hello world')
-    extractor = Extract('db', dataset='etl-trials')
+    extractor = Extract('bq', dataset='dummypytharix')
 
-    extractor.extract_from_db()
+    # DataSets = extractor.extract_from_db()
 
-    extractor.db_connection.close()
+    # loader = Loader()
+    #
+    # loader.load_to_db(DataSets)
+
+    data_set = extractor.extract_from_bq()
+
+    print(data_set)
+
+    extractor.close_all_connection()
 
 
 if __name__ == "__main__":
