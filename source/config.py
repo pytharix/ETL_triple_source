@@ -19,9 +19,23 @@ DB_ME = {
     }
 }
 
-BQ = {
+BQ_SC = {
     'data': {
-        'location': "C:/DLA/ServiceAccount/dla-internship-program.json",
+        'location': "C:/DLA/FileNeeded/dla-internship-program.json",
         'project_id': 'dla-internship-program'
+    }
+}
+
+BQ_TG = {
+    'data': {
+        'location': "C:/DLA/FileNeeded/dla-internship-program.json",
+        'project_id': 'dla-internship-program'
+    }
+}
+
+API_SC = {
+    'data': {
+        'url': 'https://jsonplaceholder.typicode.com/comments',
+        'jsonLoc': 'C:/DLA/FileNeeded/jsonfile.json'
     }
 }
