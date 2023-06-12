@@ -39,3 +39,9 @@ API_SC = {
         'jsonLoc': 'C:/DLA/FileNeeded/jsonfile.json'
     }
 }
+
+FLAT_FILE = {
+    'data': {
+        'location_file': 'C:/DLA/FileNeeded/customer.csv'
+    }
+}

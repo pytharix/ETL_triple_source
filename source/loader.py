@@ -85,7 +85,6 @@ class Loader:
 
             project_id = self.__bq_detail['project_id']
             table_id = each_table
-
             converted_data_df.to_gbq(
                 destination_table=f'{project_id}.{data_set_id}.{table_id}',
                 project_id=project_id,

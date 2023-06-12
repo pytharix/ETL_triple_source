@@ -1,4 +1,6 @@
 import re
+
+import pandas as pd
 import petl
 import json
 import pandas
@@ -7,16 +9,18 @@ import mysql.connector
 from google.cloud import bigquery
 from mysql.connector import Error
 from google.oauth2 import service_account
-from source.config import DB_SOURCE, API_SC
+from source.config import DB_SOURCE, API_SC, FLAT_FILE
 from source.config import BQ_SC as BQ_Sources
 
 
 class Extract:
-    def __init__(self, type_extraction=None, dataset=None):
+    def __init__(self, type_extraction=None, dataset=None, table_name=None):
         #  Connection (type of Extraction)
         self.__db_connection = None
         self.__bq_connection = None
         self.__api_url = None
+        self.__data_set = dataset
+        self.__table_name = table_name
 
         #  Type of Extraction to make the connection
         if type_extraction:
@@ -35,6 +39,9 @@ class Extract:
         #  "Connecting" API - since api don't need a connection to specific tools
         elif self.__type_extraction == 'api':
             self.__api_url = API_SC['data']['url']
+
+        elif self.__type_extraction == 'flat':
+            self.__flat_file_loc = FLAT_FILE['data']['location_file']
 
     def __connect_db(self):
         if self.__data_set:
@@ -90,11 +97,19 @@ class Extract:
 
         return data_tables
 
-    def extract_from_bq(self):
-        show_all_table = f"""
-        SELECT table_name 
-          FROM {self.__data_set}.INFORMATION_SCHEMA.TABLES
-        """
+    def extract_from_bq(self, table_name_source):
+        if not table_name_source:
+            show_all_table = f"""
+                        SELECT table_name 
+                          FROM {self.__data_set}.INFORMATION_SCHEMA.TABLES
+                        """
+
+        else:
+            show_all_table = f"""
+                        SELECT table_name 
+                          FROM {self.__data_set}.INFORMATION_SCHEMA.TABLES
+                         WHERE table_name = '{table_name_source}'
+                        """
 
         query_job = self.__bq_connection.query(show_all_table)
 
@@ -117,9 +132,9 @@ class Extract:
 
         return data_tables
 
-    def extract_from_api(self, table_name=None):
+    def extract_from_api(self, table_name):
         if not table_name:
-            table_name=MyClass.create_table_name(API_SC['data']['url'])
+            table_name = MyClass.create_table_name(API_SC['data']['url'])
         data = requests.get(self.__api_url).text
 
         jsonLoc = API_SC['data']['jsonLoc']
@@ -133,6 +148,37 @@ class Extract:
         table1 = petl.fromjson(jsonLoc, header=header_table)
 
         return {table_name: table1}
+
+    def extract(self, table_name=None):
+        data_ = None
+
+        #  Extract from DataBase
+        if self.__type_extraction == "db":
+            data_ = self.extract_from_db()
+
+        #  Extract from Big Query
+        elif self.__type_extraction == "bq":
+            data_ = self.extract_from_bq(self.__table_name)
+
+        #  Extract from API
+        elif self.__type_extraction == 'api':
+            data_ = self.extract_from_api(table_name)
+
+        return data_
+
+    def extract_from_flat(self):
+        # with open('customer.csv') as f:
+        #     print(f)
+        file_name = 'customer.xlsx'
+        table1 = pd.read_excel(file_name)
+        table1 = table1.fillna(0)
+        print(table1)
+        table2 = petl.fromdataframe(table1)
+        table3 = petl.cut(table2, ['Customer ID', 'Contact Name'])
+        table_name = file_name.split('.')[0]
+        return_table = {table_name: table3}
+
+        return return_table
 
     def close_all_connection(self):
         if self.__db_connection:
